@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Schift Report</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #15171e;
+    color: #c8ccd4;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 48px 16px;
+  }
+  .wrap { width: 640px; }
+
+  .panels {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+  .panel {
+    background: #1c1f2b;
+    border: 1px solid #2a2e3d;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .panel-label {
+    padding: 12px 18px;
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: 1px;
+  }
+  .panel.before .panel-label {
+    color: #e2e847;
+  }
+  .panel.after .panel-label {
+    color: #a3e635;
+  }
+  .tier {
+    margin: 0 18px;
+    padding: 8px 0;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 700;
+    border-radius: 4px;
+    letter-spacing: 0.5px;
+  }
+  .panel.before .tier {
+    background: #e2e847;
+    color: #1c1f2b;
+  }
+  .panel.after .tier {
+    background: #a3e635;
+    color: #1c1f2b;
+  }
+  .stats {
+    padding: 16px 18px;
+  }
+  .stat-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 0;
+    font-size: 14px;
+  }
+  .stat-icon {
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    display: inline-block;
+    flex-shrink: 0;
+  }
+  .stat-text {
+    color: #c8ccd4;
+  }
+  .stat-text strong {
+    color: #f0f0f0;
+  }
+
+  /* Bottom box — delta */
+  .delta-section {
+    background: #1c1f2b;
+    border: 1px solid #2a2e3d;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .delta-panels {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .delta-cell {
+    padding: 20px;
+    text-align: center;
+  }
+  .delta-cell.before {
+    border-right: 1px solid #2a2e3d;
+  }
+  .delta-cell .label {
+    font-size: 12px;
+    color: #64748b;
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
+  .delta-cell .number {
+    font-size: 28px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+  }
+  .delta-cell.before .number {
+    color: #64748b;
+  }
+  .delta-cell.after .number {
+    color: #a3e635;
+  }
+  .delta-cell.after .label {
+    color: #a3e635;
+  }
+
+  /* Verdict bar */
+  .verdict-bar {
+    padding: 14px;
+    text-align: center;
+    font-size: 13px;
+    color: #64748b;
+    border-top: 1px solid #2a2e3d;
+  }
+  .verdict-bar strong {
+    color: #a3e635;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="panels">
+    <div class="panel before">
+      <div class="panel-label">BEFORE</div>
+      <div class="tier">openai/text-embedding-3-small</div>
+      <div class="stats">
+          <div class="stat-row">
+            <span class="stat-icon" style="background:#e2e847;"></span>
+            <span class="stat-text">Top-1 Accuracy <strong>58.8%</strong></span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-icon" style="background:#e2e847;"></span>
+            <span class="stat-text">Top-10 Recall <strong>85.4%</strong></span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-icon" style="background:#e2e847;"></span>
+            <span class="stat-text">Top-100 Recall <strong>97.3%</strong></span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-icon" style="background:#e2e847;"></span>
+            <span class="stat-text">Ranking Quality <strong>73.0%</strong></span>
+          </div></div>
+    </div>
+
+    <div class="panel after">
+      <div class="panel-label">AFTER</div>
+      <div class="tier">google/gemini-embedding-001</div>
+      <div class="stats">
+          <div class="stat-row">
+            <span class="stat-icon" style="background:#a3e635;"></span>
+            <span class="stat-text">Top-1 Accuracy <strong>60.5%</strong></span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-icon" style="background:#a3e635;"></span>
+            <span class="stat-text">Top-10 Recall <strong>93.8%</strong></span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-icon" style="background:#a3e635;"></span>
+            <span class="stat-text">Top-100 Recall <strong>99.3%</strong></span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-icon" style="background:#a3e635;"></span>
+            <span class="stat-text">Ranking Quality <strong>79.2%</strong></span>
+          </div></div>
+    </div>
+  </div>
+
+  <div class="delta-section">
+    <div class="delta-panels">
+      <div class="delta-cell before">
+        <div class="label">Search Quality Change</div>
+        <div class="number">0</div>
+      </div>
+      <div class="delta-cell after">
+        <div class="label">Search Quality Change</div>
+        <div class="number">+8.4%</div>
+      </div>
+    </div>
+    <div class="verdict-bar">
+      Switching to <strong>AFTER</strong> will apply the new configuration.
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

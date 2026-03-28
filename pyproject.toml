@@ -1,0 +1,60 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "schift"
+version = "0.3.0"
+description = "Embedding model migration SDK. Switch models without re-embedding."
+readme = "README.md"
+requires-python = ">=3.9"
+license = "MIT"
+authors = [{ name = "Schift", email = "hello@schift.io" }]
+keywords = ["embeddings", "migration", "vector-database", "rag", "projection"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "numpy>=1.24",
+    "httpx>=0.24",
+]
+
+[project.urls]
+Homepage = "https://schift.io"
+Documentation = "https://docs.schift.io"
+Repository = "https://github.com/schift-io/schift-py"
+"Bug Tracker" = "https://github.com/schift-io/schift-py/issues"
+
+[project.optional-dependencies]
+postgres = ["psycopg[binary]>=3.1", "pgvector>=0.2"]
+qdrant = ["qdrant-client>=1.7"]
+weaviate = ["weaviate-client>=4.4"]
+pinecone = ["pinecone-client>=5.0"]
+milvus = ["pymilvus>=2.4"]
+chroma = ["chromadb>=0.4"]
+elasticsearch = ["elasticsearch>=8.0"]
+redis = ["redis>=5.0"]
+mongodb = ["pymongo>=4.7"]
+all = [
+    "psycopg[binary]>=3.1", "pgvector>=0.2",
+    "qdrant-client>=1.7",
+    "weaviate-client>=4.4",
+    "pinecone-client>=5.0",
+    "pymilvus>=2.4",
+    "chromadb>=0.4",
+    "elasticsearch>=8.0",
+    "redis>=5.0",
+    "pymongo>=4.7",
+]
+dev = ["pytest>=7.0", "ruff>=0.1"]
+
+[tool.ruff]
+line-length = 100
