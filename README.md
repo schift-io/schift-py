@@ -4,7 +4,7 @@ Python client and local migration toolkit for Schift.
 
 The package currently exposes two public client styles:
 
-- `Schift`: modular client for live API operations such as catalog lookup, embedding, routing, search, usage, and hosted collection management.
+- `Schift`: modular client for live API operations such as bucket ingest, catalog lookup, embedding, routing, search, usage, and hosted collection management.
 - `Client`: legacy projection client for fitting and downloading `Projection` objects that run locally.
 
 ## Install
@@ -66,6 +66,35 @@ with Schift() as client:
 ```
 
 For long-running processes, keep one `Schift` instance and call `close()` during shutdown.
+
+## Bucket Ingest And Search
+
+```python
+from schift import Schift
+
+with Schift() as client:
+    bucket = client.buckets.create(name="finance-docs")
+    upload = client.buckets.upload(
+        bucket["id"],
+        [("files", ("q1-report.pdf", open("q1-report.pdf", "rb").read(), "application/pdf"))],
+    )
+
+    jobs = client.buckets.list_jobs(bucket_id=bucket["id"])
+    hits = client.buckets.search(
+        bucket["id"],
+        "revenue guidance",
+        top_k=5,
+        filter={"metadata": {"quarter": "Q1"}},
+    )
+
+    print(upload["bucket_id"])
+    print(jobs[0]["status"] if jobs else "queued")
+    print(hits[0] if hits else "no hits")
+```
+
+Use `client.db` when you want a generic collection retrieval surface, `POST /v1/chat` for bucket-backed RAG chat with sources, and `POST /v1/chat/completions` for OpenAI-compatible LLM routing without bucket context.
+
+The bucket helper also exposes `get_job()`, `list_jobs()`, `wait_for_job()`, and `poll_job()` so scripts can keep ingest orchestration in one place.
 
 ## Quickstart
 

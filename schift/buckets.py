@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import json
-from typing import Optional
+import time
+from typing import Any, Optional
 
 from schift._http import HttpClient
 
@@ -22,10 +23,21 @@ class BucketsModule:
     def delete(self, bucket_id: str):
         return self._http.delete(f"/buckets/{bucket_id}")
 
-    def search(self, bucket_id: str, query: str, top_k: int = 10, mode: str = "hybrid", rerank: bool = False, model: Optional[str] = None):
+    def search(
+        self,
+        bucket_id: str,
+        query: str,
+        top_k: int = 10,
+        mode: str = "hybrid",
+        rerank: bool = False,
+        model: Optional[str] = None,
+        filter: Optional[dict[str, Any]] = None,
+    ):
         payload = {"query": query, "top_k": top_k, "mode": mode, "rerank": rerank}
         if model is not None:
             payload["model"] = model
+        if filter is not None:
+            payload["filter"] = filter
         return self._http.post(f"/buckets/{bucket_id}/search", data=payload)
 
     def graph(self, bucket_id: str, query: Optional[str] = None, top_k: int = 10):
@@ -44,6 +56,55 @@ class BucketsModule:
             meta["chunk_overlap"] = chunk_overlap
         form_data = {"payload": json.dumps(meta)} if meta else {}
         return self._http._post_form_with_files(f"/buckets/{bucket_id}/upload", form_data, files)
+
+    def get_job(self, job_id: str):
+        return self._http.get(f"/jobs/{job_id}")
+
+    def list_jobs(
+        self,
+        bucket_id: Optional[str] = None,
+        status: Optional[str] = None,
+        limit: Optional[int] = None,
+    ):
+        params = {}
+        if bucket_id is not None:
+            params["bucket_id"] = bucket_id
+        if status is not None:
+            params["status"] = status
+        if limit is not None:
+            params["limit"] = limit
+        return self._http.get("/jobs", params=params)
+
+    def wait_for_job(
+        self,
+        job_id: str,
+        poll_interval: float = 1.0,
+        timeout: float = 300.0,
+        terminal_statuses: tuple[str, ...] = ("ready", "failed", "cancelled"),
+    ):
+        deadline = time.monotonic() + timeout
+        while True:
+            job = self.get_job(job_id)
+            status = job.get("status") if isinstance(job, dict) else None
+            if status in terminal_statuses:
+                return job
+            if time.monotonic() >= deadline:
+                raise TimeoutError(f"Timed out waiting for job {job_id}")
+            time.sleep(poll_interval)
+
+    def poll_job(
+        self,
+        job_id: str,
+        poll_interval: float = 1.0,
+        timeout: float = 300.0,
+        terminal_statuses: tuple[str, ...] = ("ready", "failed", "cancelled"),
+    ):
+        return self.wait_for_job(
+            job_id,
+            poll_interval=poll_interval,
+            timeout=timeout,
+            terminal_statuses=terminal_statuses,
+        )
 
     def add_edges(self, bucket_id: str, edges: list):
         return self._http.post(f"/buckets/{bucket_id}/edges", data={"edges": edges})
