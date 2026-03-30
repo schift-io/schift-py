@@ -34,19 +34,7 @@ jobs:
         if: github.event_name == 'release'
         run: |
           TAG_VERSION="${GITHUB_REF_NAME#v}"
-          python - "$TAG_VERSION" <<'PY'
-from pathlib import Path
-import re
-import sys
-
-version = sys.argv[1]
-path = Path("pyproject.toml")
-text = path.read_text()
-updated = re.sub(r'(?m)^version = ".*"$', f'version = "{version}"', text, count=1)
-if text == updated:
-    raise SystemExit("Failed to set version in pyproject.toml")
-path.write_text(updated)
-PY
+          sed -i "s/^version = \".*\"$/version = \"${TAG_VERSION}\"/" pyproject.toml
 
       - name: Publish to PyPI
         if: github.event_name == 'release'
