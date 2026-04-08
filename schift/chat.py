@@ -63,7 +63,7 @@ class ChatModule:
         bucket: str,
         *,
         history: Optional[list[dict]] = None,
-        model: str = "openai/gpt-4o-mini",
+        model: Optional[str] = None,
         top_k: int = 5,
         system_prompt: Optional[str] = None,
         temperature: Optional[float] = None,
@@ -74,9 +74,10 @@ class ChatModule:
             "bucket_id": bucket,
             "message": message,
             "stream": False,
-            "model": model,
             "top_k": top_k,
         }
+        if model is not None:
+            payload["model"] = model
         if history:
             payload["history"] = history
         if system_prompt:
@@ -90,7 +91,7 @@ class ChatModule:
         return ChatResponse(
             reply=data["reply"],
             sources=[ChatSource(**s) for s in data.get("sources", [])],
-            model=data.get("model", model),
+            model=data.get("model", model or ""),
         )
 
     def stream(
@@ -99,7 +100,7 @@ class ChatModule:
         bucket: str,
         *,
         history: Optional[list[dict]] = None,
-        model: str = "openai/gpt-4o-mini",
+        model: Optional[str] = None,
         top_k: int = 5,
         system_prompt: Optional[str] = None,
         temperature: Optional[float] = None,
@@ -110,9 +111,10 @@ class ChatModule:
             "bucket_id": bucket,
             "message": message,
             "stream": True,
-            "model": model,
             "top_k": top_k,
         }
+        if model is not None:
+            payload["model"] = model
         if history:
             payload["history"] = history
         if system_prompt:

@@ -6,7 +6,7 @@ from typing import Any, Optional
 
 import httpx
 
-from schift.client import AuthError, QuotaError, SchiftError
+from schift.client import AuthError, EntitlementError, QuotaError, SchiftError
 
 _DEFAULT_BASE_URL = "https://api.schift.io/v1"
 _USER_AGENT = "schift-python/0.1.0"
@@ -89,6 +89,9 @@ class HttpClient:
         if resp.status_code == 402:
             detail = resp.json().get("detail", "Quota exceeded") if resp.text else "Quota exceeded"
             raise QuotaError(detail)
+        if resp.status_code == 403:
+            detail = resp.json().get("detail", "Upgrade your plan") if resp.text else "Upgrade your plan"
+            raise EntitlementError(detail)
         if resp.status_code >= 400:
             raise SchiftError(f"API error {resp.status_code}: {resp.text}")
         if resp.status_code == 204:

@@ -316,6 +316,10 @@ class AuthError(SchiftError):
 class QuotaError(SchiftError):
     pass
 
+class EntitlementError(SchiftError):
+    """Raised when 403 — feature requires plan upgrade."""
+    pass
+
 
 # ---- Serialization ----
 
