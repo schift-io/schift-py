@@ -41,7 +41,7 @@ class SchiftTools:
         chat_fn: Callable[..., Any],
         collection: str = "",
         bucket_id: str = "",
-        top_k: int = 5,
+        top_k: int = 7,
         include_chat: bool = False,
         prefix: str = "schift",
     ):
@@ -79,7 +79,7 @@ class SchiftTools:
                             },
                             "top_k": {
                                 "type": "number",
-                                "description": "Number of results to return (default 5)",
+                                "description": "Number of results to return (default 7)",
                             },
                         },
                         "required": ["query"],
@@ -140,7 +140,7 @@ class SchiftTools:
                         },
                         "top_k": {
                             "type": "number",
-                            "description": "Number of results to return (default 5)",
+                            "description": "Number of results to return (default 7)",
                         },
                     },
                     "required": ["query"],
@@ -183,9 +183,9 @@ class SchiftTools:
         class SearchInput(BaseModel):
             query: str = Field(description="Search query in natural language")
             collection: str = Field(default="", description="Collection name")
-            top_k: int = Field(default=5, description="Number of results")
+            top_k: int = Field(default=7, description="Number of results")
 
-        def _search(query: str, collection: str = "", top_k: int = 5) -> str:
+        def _search(query: str, collection: str = "", top_k: int = 7) -> str:
             results = self._exec_search(query=query, collection=collection, top_k=top_k)
             return json.dumps(results, ensure_ascii=False)
 
