@@ -4,7 +4,7 @@ Python client and local migration toolkit for Schift.
 
 The package currently exposes two public client styles:
 
-- `Schift`: modular client for live API operations such as bucket ingest, catalog lookup, embedding, routing, search, usage, and hosted collection management.
+- `Schift`: modular client for live API operations such as bucket ingest, catalog lookup, embedding, routing, search, usage, and hosted bucket management.
 - `Client`: legacy projection client for fitting and downloading `Projection` objects that run locally.
 
 ## Install
@@ -92,7 +92,7 @@ with Schift() as client:
     print(hits[0] if hits else "no hits")
 ```
 
-Use `client.db` when you want a generic collection retrieval surface, `POST /v1/chat` for bucket-backed RAG chat with sources, and `POST /v1/chat/completions` for OpenAI-compatible LLM routing without bucket context.
+Use `client.buckets` and `client.query(..., bucket=...)` for retrieval, `POST /v1/chat` for bucket-backed RAG chat with sources, and `POST /v1/chat/completions` for OpenAI-compatible LLM routing without bucket context.
 
 The bucket helper also exposes `get_job()`, `list_jobs()`, `wait_for_job()`, and `poll_job()` so scripts can keep ingest orchestration in one place.
 
@@ -108,7 +108,7 @@ with Schift() as client:
         model="openai/text-embedding-3-small",
     )
 
-    client.db.create_collection(name="finance-docs", dimension=len(vector))
+    bucket = client.buckets.create("finance-docs")
     client.db.upsert(
         collection="finance-docs",
         vectors=[
@@ -122,7 +122,7 @@ with Schift() as client:
 
     hits = client.query(
         "revenue guidance",
-        collection="finance-docs",
+        bucket="finance-docs",
         top_k=5,
     )
 
@@ -202,7 +202,7 @@ with Schift() as client:
 
 ### `db`
 
-Manage hosted collections and write vectors or raw documents.
+Manage hosted buckets and write vectors or raw documents.
 
 ```python
 from schift import Schift
@@ -213,7 +213,7 @@ with Schift() as client:
         model="openai/text-embedding-3-small",
     )
 
-    collection = client.db.create_collection(
+    bucket = client.db.create_collection(
         name="product-docs",
         dimension=len(vector),
     )
@@ -247,7 +247,7 @@ with Schift() as client:
 Available methods:
 
 - `create_collection(name, dimension)`
-- `list_collections()`
+- `list_buckets()`
 - `get_collection(name)`
 - `collection_stats(name)`
 - `delete_collection(name)`
@@ -256,7 +256,7 @@ Available methods:
 
 ### `query`
 
-The query module is callable and supports hosted collections or an external DB handle.
+The query module is callable and supports hosted buckets or an external DB handle.
 
 ```python
 from schift import Schift
@@ -264,7 +264,7 @@ from schift import Schift
 with Schift() as client:
     hosted = client.query(
         "vector migration rollback plan",
-        collection="product-docs",
+        bucket="product-docs",
         top_k=10,
         rerank=True,
         rerank_top_k=5,
@@ -343,7 +343,7 @@ wf = client.workflow.create("Custom RAG")
 # Add blocks
 start = client.workflow.add_block(wf.id, "start", title="Start")
 retriever = client.workflow.add_block(wf.id, "retriever", config={
-    "collection": "my-docs",
+    "bucket": "my-docs",
     "top_k": 5,
     "rerank": True,
     "rerank_top_k": 3,

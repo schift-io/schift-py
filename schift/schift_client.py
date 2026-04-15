@@ -41,7 +41,7 @@ class Schift:
         client = Schift(api_key="sch_xxx")
         # or: client = Schift()  # reads SCHIFT_API_KEY
 
-        results = client.query("what is schift?", collection="docs")
+        results = client.query("what is schift?", bucket="docs")
         models = client.catalog.list()
         embedding = client.embed("hello world", model="openai/text-embedding-3-small")
     """

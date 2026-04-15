@@ -39,6 +39,7 @@ class SchiftTools:
         self,
         search_fn: Callable[..., Any],
         chat_fn: Callable[..., Any],
+        bucket: str = "",
         collection: str = "",
         bucket_id: str = "",
         top_k: int = 7,
@@ -47,8 +48,9 @@ class SchiftTools:
     ):
         self._search_fn = search_fn
         self._chat_fn = chat_fn
+        self._bucket = bucket or bucket_id or collection
         self._collection = collection
-        self._bucket_id = bucket_id
+        self._bucket_id = bucket_id or bucket
         self._top_k = top_k
         self._include_chat = include_chat
         self._prefix = prefix
@@ -73,9 +75,13 @@ class SchiftTools:
                                 "type": "string",
                                 "description": "The search query in natural language",
                             },
+                            "bucket": {
+                                "type": "string",
+                                "description": "Document bucket to search in",
+                            },
                             "collection": {
                                 "type": "string",
-                                "description": "Document collection to search in",
+                                "description": "Deprecated alias for bucket",
                             },
                             "top_k": {
                                 "type": "number",
@@ -134,9 +140,13 @@ class SchiftTools:
                             "type": "string",
                             "description": "The search query in natural language",
                         },
+                        "bucket": {
+                            "type": "string",
+                            "description": "Document bucket to search in",
+                        },
                         "collection": {
                             "type": "string",
-                            "description": "Document collection to search in",
+                            "description": "Deprecated alias for bucket",
                         },
                         "top_k": {
                             "type": "number",
@@ -182,11 +192,12 @@ class SchiftTools:
 
         class SearchInput(BaseModel):
             query: str = Field(description="Search query in natural language")
-            collection: str = Field(default="", description="Collection name")
+            bucket: str = Field(default="", description="Bucket name or ID")
+            collection: str = Field(default="", description="Deprecated alias for bucket")
             top_k: int = Field(default=7, description="Number of results")
 
-        def _search(query: str, collection: str = "", top_k: int = 7) -> str:
-            results = self._exec_search(query=query, collection=collection, top_k=top_k)
+        def _search(query: str, bucket: str = "", collection: str = "", top_k: int = 7) -> str:
+            results = self._exec_search(query=query, bucket=bucket, collection=collection, top_k=top_k)
             return json.dumps(results, ensure_ascii=False)
 
         tools = [
@@ -260,10 +271,10 @@ class SchiftTools:
 
     # ---- Internal ----
 
-    def _exec_search(self, query: str, collection: str = "", top_k: int = 0, **_) -> list[dict]:
+    def _exec_search(self, query: str, bucket: str = "", collection: str = "", top_k: int = 0, **_) -> list[dict]:
         return self._search_fn(
             query=query,
-            collection=collection or self._collection,
+            bucket=bucket or collection or self._bucket or self._collection,
             top_k=top_k or self._top_k,
         )
 
