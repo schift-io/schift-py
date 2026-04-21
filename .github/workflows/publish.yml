@@ -38,5 +38,7 @@ jobs:
       - name: Verify dist contents
         run: twine check dist/*
 
-      - name: Publish to PyPI (trusted publisher)
+      - name: Publish to PyPI (API token)
         uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
