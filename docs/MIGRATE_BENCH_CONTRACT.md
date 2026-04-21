@@ -20,11 +20,11 @@ paired corpus/query embeddings
 report = client.migrate.bench(
     source_model="openai/text-embedding-3-large",
     target_model="google/gemini-embedding-004",
-    corpus_source=corpus_source,
-    corpus_target=corpus_target,
-    queries_source=queries_source,
-    queries_target=queries_target,
-    corpus_ids=corpus_ids,
+    bucket_source=bucket_source,
+    bucket_target=bucket_target,
+    query_source=query_source,
+    query_target=query_target,
+    bucket_document_ids=bucket_document_ids,
     query_ids=query_ids,
     qrels=qrels,
     sample_ratios=[0.02, 0.05, 0.1, 0.2],
@@ -37,11 +37,11 @@ report = client.migrate.bench(
 
 - `source_model`
 - `target_model`
-- `corpus_source`
-- `corpus_target`
-- `queries_source`
-- `queries_target`
-- `corpus_ids`
+- `bucket_source`
+- `bucket_target`
+- `query_source`
+- `query_target`
+- `bucket_document_ids`
 - `query_ids`
 - `qrels`
 
@@ -53,11 +53,11 @@ report = client.migrate.bench(
 
 ## 4. Input constraints
 
-- `corpus_source`와 `corpus_target`는 같은 corpus에 대한 paired embeddings여야 함
-- `queries_source`와 `queries_target`도 같은 query set에 대한 paired embeddings여야 함
-- `corpus_ids` 길이는 corpus row 수와 같아야 함
+- `bucket_source`와 `bucket_target`는 같은 bucket document set에 대한 paired embeddings여야 함
+- `query_source`와 `query_target`도 같은 query set에 대한 paired embeddings여야 함
+- `bucket_document_ids` 길이는 bucket row 수와 같아야 함
 - `query_ids` 길이는 query row 수와 같아야 함
-- `qrels`는 `query_id -> relevant corpus ids` 구조여야 함
+- `qrels`는 `query_id -> relevant bucket document ids` 구조여야 함
 
 ## 5. Output
 
@@ -66,7 +66,7 @@ report = client.migrate.bench(
   "verdict": "SAFE",
   "source_model": "openai/text-embedding-3-large",
   "target_model": "google/gemini-embedding-004",
-  "n_corpus": 10000,
+  "bucket_document_count": 10000,
   "n_queries": 200,
   "best_method": "ridge",
   "best_sample_ratio": 0.1,

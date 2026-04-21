@@ -124,9 +124,9 @@ class Client:
         self,
         source: NDArray,
         target: NDArray,
-        queries_source: NDArray,
-        queries_target: NDArray,
-        corpus_ids: list[str],
+        query_source: NDArray,
+        query_target: NDArray,
+        bucket_document_ids: list[str],
         query_ids: list[str],
         qrels: dict[str, list[str]],
         source_model: str = "unknown",
@@ -139,13 +139,13 @@ class Client:
         report with SAFE/WARN/FAIL recommendation.
 
         Args:
-            source: Corpus embeddings from old model, shape (n, d_source).
-            target: Corpus embeddings from new model, shape (n, d_target).
-            queries_source: Query embeddings from old model.
-            queries_target: Query embeddings from new model.
-            corpus_ids: Corpus document IDs.
+            source: Bucket embeddings from old model, shape (n, d_source).
+            target: Bucket embeddings from new model, shape (n, d_target).
+            query_source: Query embeddings from old model.
+            query_target: Query embeddings from new model.
+            bucket_document_ids: Bucket document IDs.
             query_ids: Query IDs.
-            qrels: Relevance judgments {query_id: [relevant_corpus_ids]}.
+            qrels: Relevance judgments {query_id: [relevant_bucket_document_ids]}.
             source_model: Source model name.
             target_model: Target model name.
             sample_ratios: Ratios to test (default: [0.02, 0.05, 0.1, 0.2]).
@@ -155,8 +155,8 @@ class Client:
         """
         source = np.asarray(source, dtype=np.float32)
         target = np.asarray(target, dtype=np.float32)
-        queries_source = np.asarray(queries_source, dtype=np.float32)
-        queries_target = np.asarray(queries_target, dtype=np.float32)
+        query_source = np.asarray(query_source, dtype=np.float32)
+        query_target = np.asarray(query_target, dtype=np.float32)
 
         # Serialize qrels as {qid: [cid, ...]} for JSON
         qrels_json = {k: list(v) if isinstance(v, set) else v for k, v in qrels.items()}
@@ -166,19 +166,19 @@ class Client:
             "target_model": target_model,
             "source_dim": source.shape[1],
             "target_dim": target.shape[1],
-            "n_corpus": len(corpus_ids),
+            "bucket_document_count": len(bucket_document_ids),
             "n_queries": len(query_ids),
-            "corpus_ids": corpus_ids,
+            "bucket_document_ids": bucket_document_ids,
             "query_ids": query_ids,
             "qrels": qrels_json,
             "sample_ratios": sample_ratios or [0.02, 0.05, 0.1, 0.2],
         }
 
         resp = self._post("/v1/bench", payload, files={
-            "corpus_source": _ndarray_to_bytes(source),
-            "corpus_target": _ndarray_to_bytes(target),
-            "queries_source": _ndarray_to_bytes(queries_source),
-            "queries_target": _ndarray_to_bytes(queries_target),
+            "bucket_source": _ndarray_to_bytes(source),
+            "bucket_target": _ndarray_to_bytes(target),
+            "query_source": _ndarray_to_bytes(query_source),
+            "query_target": _ndarray_to_bytes(query_target),
         })
 
         return BenchReport(resp)
@@ -281,9 +281,9 @@ class BenchReport:
         return self._data.get("target_model", "unknown")
 
     @property
-    def n_corpus(self) -> int:
-        """Number of corpus documents used in the benchmark."""
-        return self._data.get("n_corpus", 0)
+    def bucket_document_count(self) -> int:
+        """Number of bucket documents used in the benchmark."""
+        return self._data.get("bucket_document_count", 0)
 
     @property
     def n_queries(self) -> int:
@@ -299,7 +299,7 @@ class BenchReport:
             f"[{v}] {self.source_model} -> {self.target_model}\n"
             f"  Original R@10:  {orig_r10:.4f}\n"
             f"  Projected R@10: {proj_r10:.4f}\n"
-            f"  Corpus: {self.n_corpus:,} docs, {self.n_queries:,} queries\n"
+            f"  Bucket: {self.bucket_document_count:,} docs, {self.n_queries:,} queries\n"
             f"  Verdict: {v}"
         )
 

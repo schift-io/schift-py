@@ -19,7 +19,9 @@ from schift.db import DBModule
 from schift.drift import DriftModule
 from schift.embed import EmbedModule
 from schift.jobs import JobsModule
+from schift.providers import ProvidersModule
 from schift.query import QueryModule
+from schift.rag import RagModule
 from schift.rerank import RerankModule
 from schift.routing import RoutingModule
 from schift.search import SearchModule
@@ -105,6 +107,11 @@ class Schift:
         return ChatModule(self._http)
 
     @cached_property
+    def rag(self) -> RagModule:
+        """One-shot RAG: retrieve + prompt + LLM via POST /v1/rag/run."""
+        return RagModule(self._http)
+
+    @cached_property
     def usage(self) -> UsageModule:
         return UsageModule(self._http)
 
@@ -143,6 +150,11 @@ class Schift:
     @cached_property
     def workflows(self) -> WorkflowsModule:
         return WorkflowsModule(self._http)
+
+    @cached_property
+    def providers(self) -> ProvidersModule:
+        """Manage BYOK LLM provider keys (OpenAI / Google / Anthropic)."""
+        return ProvidersModule(self._http)
 
     @cached_property
     def tools(self) -> SchiftTools:

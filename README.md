@@ -166,6 +166,28 @@ with Schift() as client:
 
 Return values are NumPy arrays.
 
+### `providers`
+
+Register your own LLM provider API key (BYOK) so `client.chat` and `client.completions` call the provider directly instead of consuming Schift Cloud's shared LLM quota. Supported providers: `"openai"`, `"google"`, `"anthropic"`.
+
+```python
+from schift import Schift
+
+with Schift() as client:
+    # Register a key
+    client.providers.set(
+        "google",
+        api_key="AIza...",
+        # endpoint_url="https://custom-proxy.example.com",  # optional
+    )
+
+    # Check whether a provider is configured (api_key is never returned)
+    status = client.providers.get("openai")
+    # {"provider": "openai", "configured": True | False, "endpoint_url": None | str}
+```
+
+Rotation: a stored BYOK record **shadows** any server-side env var or secret for that provider. To rotate, call `set()` again with the new key — changing env vars alone has no effect on orgs with a BYOK record.
+
 ### `routing`
 
 Read or update the server-side routing policy used by Schift when a model is omitted.

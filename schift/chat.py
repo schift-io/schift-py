@@ -25,10 +25,15 @@ class ChatResponse:
 
 @dataclass
 class ChatStreamEvent:
-    type: str  # "sources" | "chunk" | "done" | "error"
+    type: str  # "sources" | "chunk" | "done" | "error" | "pipeline_step"
     sources: list[ChatSource] = field(default_factory=list)
     content: str = ""
     message: str = ""
+    # pipeline_step fields
+    step: str = ""
+    status: str = ""
+    duration_ms: int | None = None
+    result_count: int | None = None
 
 
 class ChatModule:
@@ -125,8 +130,13 @@ class ChatModule:
             payload["max_tokens"] = max_tokens
 
         with self._http.stream_post("/chat", data=payload) as resp:
+            current_event_type: str | None = None
             for line in resp.iter_lines():
+                if line.startswith("event: "):
+                    current_event_type = line[7:].strip()
+                    continue
                 if not line.startswith("data: "):
+                    current_event_type = None
                     continue
                 data_str = line[6:].strip()
                 if not data_str or data_str == "[DONE]":
@@ -136,6 +146,18 @@ class ChatModule:
                 except json.JSONDecodeError:
                     continue
 
+                if current_event_type == "pipeline_step":
+                    yield ChatStreamEvent(
+                        type="pipeline_step",
+                        step=raw.get("step", ""),
+                        status=raw.get("status", ""),
+                        duration_ms=raw.get("duration_ms"),
+                        result_count=raw.get("result_count"),
+                    )
+                    current_event_type = None
+                    continue
+
+                current_event_type = None
                 event_type = raw.get("type", "")
                 if event_type == "sources":
                     yield ChatStreamEvent(

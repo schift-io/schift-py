@@ -195,8 +195,8 @@ class MigrateModule:
         target_model: str,
         sample_ratios: Optional[list[float]] = None,
         query_count: Optional[int] = None,
-        corpus_count: Optional[int] = None,
-        corpus_ids: Optional[list[str]] = None,
+        bucket_document_count: Optional[int] = None,
+        bucket_document_ids: Optional[list[str]] = None,
         query_ids: Optional[list[str]] = None,
         qrels: Optional[dict[str, list[str]]] = None,
         artifact_refs: Optional[dict[str, str]] = None,
@@ -210,13 +210,13 @@ class MigrateModule:
             name: Human-readable name for this suite.
             source_model: Source model identifier.
             target_model: Target model identifier.
-            sample_ratios: Ratios of corpus to use as projection training samples.
+            sample_ratios: Ratios of bucket documents to use as projection training samples.
                            Defaults to [0.02, 0.05, 0.1, 0.2].
             query_count: Number of query vectors (auto-derived from query_ids if given).
-            corpus_count: Number of corpus vectors (auto-derived from corpus_ids if given).
-            corpus_ids: Optional list of corpus document IDs.
+            bucket_document_count: Number of bucket vectors (auto-derived from bucket_document_ids if given).
+            bucket_document_ids: Optional list of bucket document IDs.
             query_ids: Optional list of query IDs.
-            qrels: Relevance judgments {query_id: [relevant_corpus_ids]}.
+            qrels: Relevance judgments {query_id: [relevant_bucket_document_ids]}.
             artifact_refs: Optional artifact references for server-stored data.
 
         Returns:
@@ -230,10 +230,10 @@ class MigrateModule:
         }
         if query_count is not None:
             payload["query_count"] = query_count
-        if corpus_count is not None:
-            payload["corpus_count"] = corpus_count
-        if corpus_ids is not None:
-            payload["corpus_ids"] = corpus_ids
+        if bucket_document_count is not None:
+            payload["bucket_document_count"] = bucket_document_count
+        if bucket_document_ids is not None:
+            payload["bucket_document_ids"] = bucket_document_ids
         if query_ids is not None:
             payload["query_ids"] = query_ids
         if qrels is not None:
@@ -266,10 +266,10 @@ class MigrateModule:
     def run_benchmark_suite(
         self,
         suite_id: str,
-        corpus_source: NDArray,
-        corpus_target: NDArray,
-        queries_source: NDArray,
-        queries_target: NDArray,
+        bucket_source: NDArray,
+        bucket_target: NDArray,
+        query_source: NDArray,
+        query_target: NDArray,
         params: Optional[dict] = None,
     ) -> dict:
         """Run a benchmark suite and record the results.
@@ -279,19 +279,19 @@ class MigrateModule:
 
         Args:
             suite_id: Suite ID to run (e.g. "suite_abc123").
-            corpus_source: Corpus embeddings from source model, shape (n, d_source).
-            corpus_target: Corpus embeddings from target model, shape (n, d_target).
-            queries_source: Query embeddings from source model.
-            queries_target: Query embeddings from target model.
+            bucket_source: Bucket embeddings from source model, shape (n, d_source).
+            bucket_target: Bucket embeddings from target model, shape (n, d_target).
+            query_source: Query embeddings from source model.
+            query_target: Query embeddings from target model.
             params: Optional override parameters (merged with suite config on server).
 
         Returns:
             Run result dict with run_id, suite_id, status, and report.
         """
-        corpus_source = np.asarray(corpus_source, dtype=np.float32)
-        corpus_target = np.asarray(corpus_target, dtype=np.float32)
-        queries_source = np.asarray(queries_source, dtype=np.float32)
-        queries_target = np.asarray(queries_target, dtype=np.float32)
+        bucket_source = np.asarray(bucket_source, dtype=np.float32)
+        bucket_target = np.asarray(bucket_target, dtype=np.float32)
+        query_source = np.asarray(query_source, dtype=np.float32)
+        query_target = np.asarray(query_target, dtype=np.float32)
 
         form_data: dict[str, str] = {}
         if params is not None:
@@ -301,10 +301,10 @@ class MigrateModule:
             f"/benchmark-suites/{suite_id}/runs",
             form_data=form_data,
             files=[
-                ("corpus_source", ("data.npy", _ndarray_to_bytes(corpus_source), "application/octet-stream")),
-                ("corpus_target", ("data.npy", _ndarray_to_bytes(corpus_target), "application/octet-stream")),
-                ("queries_source", ("data.npy", _ndarray_to_bytes(queries_source), "application/octet-stream")),
-                ("queries_target", ("data.npy", _ndarray_to_bytes(queries_target), "application/octet-stream")),
+                ("bucket_source", ("data.npy", _ndarray_to_bytes(bucket_source), "application/octet-stream")),
+                ("bucket_target", ("data.npy", _ndarray_to_bytes(bucket_target), "application/octet-stream")),
+                ("query_source", ("data.npy", _ndarray_to_bytes(query_source), "application/octet-stream")),
+                ("query_target", ("data.npy", _ndarray_to_bytes(query_target), "application/octet-stream")),
             ],
         )
 
