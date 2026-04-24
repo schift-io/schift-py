@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "schift"
-version = "0.3.0"
+version = "0.5.0"
 description = "Embedding model migration SDK. Switch models without re-embedding."
 readme = "README.md"
 requires-python = ">=3.9"

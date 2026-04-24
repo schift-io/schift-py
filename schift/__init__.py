@@ -4,5 +4,5 @@ from schift.migrate import migrate
 # Kept for backwards compatibility — use Schift instead.
 from schift.client import Client, BenchReport
 
-__version__ = "0.1.0"
+__version__ = "0.5.0"
 __all__ = ["Schift", "Projection", "migrate", "Client", "BenchReport"]
