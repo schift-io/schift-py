@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+import json
 import mimetypes
 import os
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Mapping, Optional, Union
 
 if TYPE_CHECKING:
     from schift._http import HttpClient
@@ -52,12 +53,26 @@ class DBModule:
         """
         return self._http.post(f"/collections/{collection}/vectors", {"vectors": vectors})
 
-    def upload(self, bucket: str, files: list[str]) -> dict:
+    def upload(
+        self,
+        bucket: str,
+        files: list[str],
+        metadata: Optional[Mapping[str, Union[str, int, float, bool]]] = None,
+    ) -> dict:
         """Upload files to a bucket. Creates the bucket if it does not exist.
 
         Args:
-            bucket: Bucket name to upload into.
-            files:  List of local file paths to upload.
+            bucket:   Bucket name to upload into.
+            files:    List of local file paths to upload.
+            metadata: Per-upload metadata attached to every chunk of every
+                      file in this call. Values are coerced to strings
+                      server-side. Filter at search time via
+                      ``filter={"key": "value"}``.
+
+                      Limits: ≤32 keys, keys match ``[A-Za-z0-9_.-]+`` and
+                      ≤64 chars, values ≤512 chars, total JSON ≤4 KB.
+                      Reserved keys (``document_id``, ``chunk_id``,
+                      ``bucket_id``, ``text``, …) are rejected.
 
         Returns:
             dict with keys ``bucket_id``, ``bucket_name``, and ``uploaded``
@@ -65,7 +80,11 @@ class DBModule:
 
         Example::
 
-            client.db.upload("my-docs", files=["manual.pdf", "faq.docx"])
+            client.db.upload(
+                "my-docs",
+                files=["manual.pdf", "faq.docx"],
+                metadata={"week": "18", "team": "growth"},
+            )
         """
         # 1. Get or create bucket
         buckets = self._http.get("/buckets")
@@ -76,6 +95,10 @@ class DBModule:
             result = self._http.post("/buckets", {"name": bucket})
             bucket_id = result["id"]
 
+        form_data: dict[str, str] = {}
+        if metadata:
+            form_data["metadata"] = json.dumps(dict(metadata))
+
         # 2. Upload each file via multipart POST
         uploaded = []
         for path in files:
@@ -83,10 +106,18 @@ class DBModule:
             mime_type = mimetypes.guess_type(filename)[0] or "application/octet-stream"
             with open(path, "rb") as fh:
                 file_bytes = fh.read()
-            result = self._http.post_multipart(
-                f"/buckets/{bucket_id}/upload",
-                files=[("files", (filename, file_bytes, mime_type))],
-            )
+            file_tuples = [("files", (filename, file_bytes, mime_type))]
+            if form_data:
+                result = self._http._post_form_with_files(
+                    f"/buckets/{bucket_id}/upload",
+                    form_data=form_data,
+                    files=file_tuples,
+                )
+            else:
+                result = self._http.post_multipart(
+                    f"/buckets/{bucket_id}/upload",
+                    files=file_tuples,
+                )
             uploaded.append(result)
 
         return {"bucket_id": bucket_id, "bucket_name": bucket, "uploaded": uploaded}

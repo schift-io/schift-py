@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import time
-from typing import Any, Optional
+from typing import Any, Mapping, Optional, Union
 
 from schift._http import HttpClient
 
@@ -46,7 +46,15 @@ class BucketsModule:
             params["query"] = query
         return self._http.get(f"/buckets/{bucket_id}/graph", params=params)
 
-    def upload(self, bucket_id: str, files, ocr_strategy: Optional[str] = None, chunk_size: Optional[int] = None, chunk_overlap: Optional[int] = None):
+    def upload(
+        self,
+        bucket_id: str,
+        files,
+        ocr_strategy: Optional[str] = None,
+        chunk_size: Optional[int] = None,
+        chunk_overlap: Optional[int] = None,
+        metadata: Optional[Mapping[str, Union[str, int, float, bool]]] = None,
+    ):
         meta = {}
         if ocr_strategy is not None:
             meta["ocr_strategy"] = ocr_strategy
@@ -55,6 +63,8 @@ class BucketsModule:
         if chunk_overlap is not None:
             meta["chunk_overlap"] = chunk_overlap
         form_data = {"payload": json.dumps(meta)} if meta else {}
+        if metadata:
+            form_data["metadata"] = json.dumps(dict(metadata))
         return self._http._post_form_with_files(f"/buckets/{bucket_id}/upload", form_data, files)
 
     def get_job(self, job_id: str):
