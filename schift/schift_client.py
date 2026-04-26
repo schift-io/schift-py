@@ -16,6 +16,7 @@ from schift.catalog import CatalogModule
 from schift.chat import ChatModule
 from schift.completions import CompletionsModule
 from schift.db import DBModule
+from schift.decision_review import DecisionReviewModule
 from schift.drift import DriftModule
 from schift.embed import EmbedModule
 from schift.jobs import JobsModule
@@ -155,6 +156,11 @@ class Schift:
     def providers(self) -> ProvidersModule:
         """Manage BYOK LLM provider keys (OpenAI / Google / Anthropic)."""
         return ProvidersModule(self._http)
+
+    @cached_property
+    def decision_review(self) -> DecisionReviewModule:
+        """Run an adversarial decision review (decompose → retrieve → polarity)."""
+        return DecisionReviewModule(self._http)
 
     @cached_property
     def tools(self) -> SchiftTools:
