@@ -35,6 +35,72 @@ class MigrateModule:
     def __init__(self, http: HttpClient):
         self._http = http
 
+    # ────────────────────────────────────────────────────────────────
+    # /v1/migrate API — vectors-in migration via Schift hub
+    # ────────────────────────────────────────────────────────────────
+
+    def feasibility(
+        self,
+        source_vectors: NDArray,
+        target_vectors: NDArray,
+        source_model: str = "unknown",
+        target_model: str = "schift-embed-1",
+    ) -> dict:
+        """CKA + holdout Ridge cosine — recommends method, no charge.
+
+        Returns: {cka, recommended_method, holdout_cosine,
+                  calibration_samples_recommended, notes}
+        """
+        src = np.asarray(source_vectors, dtype=np.float32)
+        tgt = np.asarray(target_vectors, dtype=np.float32)
+        return self._http.post(
+            "/migrate/feasibility",
+            {
+                "source_model": source_model,
+                "target_model": target_model,
+                "source_vectors": src.tolist(),
+                "target_vectors": tgt.tolist(),
+            },
+        )
+
+    def quote(self, source: dict, retain_on_cloud: bool = True) -> dict:
+        """Size-aware quote. retain_on_cloud=True → $0.10/1M; False → $0.50/1M.
+
+        ``source`` shape: ``{"kind": "pgvector"|"chroma"|"pinecone"|"weaviate", "config": {...}}``.
+        """
+        return self._http.post(
+            "/migrate/quote",
+            {"source": source, "retain_on_cloud": retain_on_cloud},
+        )
+
+    def start(
+        self,
+        source: dict,
+        target_collection_id: str,
+        method: str = "ridge",
+        retain_on_cloud: bool = True,
+    ) -> dict:
+        """Kick off async migration. Free tier (≤100K) auto-paid, else returns
+        ``requires_payment=True`` and the caller redirects to Polar checkout.
+        """
+        return self._http.post(
+            "/migrate/start",
+            {
+                "source": source,
+                "target_collection_id": target_collection_id,
+                "method": method,
+                "retain_on_cloud": retain_on_cloud,
+            },
+        )
+
+    def status(self, job_id: str) -> dict:
+        """Poll a job. Returns {state, progress, n_total, n_projected, cka, ...}."""
+        return self._http.get(f"/migrate/{job_id}")
+
+    # ────────────────────────────────────────────────────────────────
+    # Legacy local-orchestration helpers (kept for SDK back-compat)
+    # ────────────────────────────────────────────────────────────────
+
     def run(
         self,
         source: Adapter,
