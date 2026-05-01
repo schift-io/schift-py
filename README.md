@@ -74,9 +74,21 @@ from schift import Schift
 
 with Schift() as client:
     bucket = client.buckets.create(name="finance-docs")
+    collection = client.buckets.create_collection(
+        bucket["id"],
+        name="support-only",
+        description="Visible to support agents",
+    )
     upload = client.buckets.upload(
         bucket["id"],
         [("files", ("q1-report.pdf", open("q1-report.pdf", "rb").read(), "application/pdf"))],
+        collection_id=collection["id"],
+    )
+    client.buckets.grant_collection_access(
+        bucket["id"],
+        collection["id"],
+        subject_type="role",
+        subject_id="support",
     )
 
     jobs = client.buckets.list_jobs(bucket_id=bucket["id"])
@@ -94,7 +106,7 @@ with Schift() as client:
 
 Use `client.buckets` and `client.query(..., bucket=...)` for retrieval, `POST /v1/chat` for bucket-backed RAG chat with sources, and `POST /v1/chat/completions` for OpenAI-compatible LLM routing without bucket context.
 
-The bucket helper also exposes `get_job()`, `list_jobs()`, `wait_for_job()`, and `poll_job()` so scripts can keep ingest orchestration in one place.
+The bucket helper also exposes `list_collections()`, `create_collection()`, `grant_collection_access()`, `get_job()`, `list_jobs()`, `wait_for_job()`, and `poll_job()` so scripts can keep ingest orchestration and permission-scoped collection setup in one place.
 
 ## Quickstart
 

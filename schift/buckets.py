@@ -54,6 +54,7 @@ class BucketsModule:
         chunk_size: Optional[int] = None,
         chunk_overlap: Optional[int] = None,
         metadata: Optional[Mapping[str, Union[str, int, float, bool]]] = None,
+        collection_id: Optional[str] = None,
     ):
         meta = {}
         if ocr_strategy is not None:
@@ -65,7 +66,35 @@ class BucketsModule:
         form_data = {"payload": json.dumps(meta)} if meta else {}
         if metadata:
             form_data["metadata"] = json.dumps(dict(metadata))
+        if collection_id is not None:
+            form_data["collection_id"] = collection_id
         return self._http._post_form_with_files(f"/buckets/{bucket_id}/upload", form_data, files)
+
+    def list_collections(self, bucket_id: str):
+        return self._http.get(f"/buckets/{bucket_id}/collections")
+
+    def create_collection(self, bucket_id: str, name: str, description: Optional[str] = None):
+        payload = {"name": name}
+        if description is not None:
+            payload["description"] = description
+        return self._http.post(f"/buckets/{bucket_id}/collections", data=payload)
+
+    def grant_collection_access(
+        self,
+        bucket_id: str,
+        collection_id: str,
+        subject_type: str,
+        subject_id: str,
+        permission: str = "search",
+    ):
+        return self._http.post(
+            f"/buckets/{bucket_id}/collections/{collection_id}/grants",
+            data={
+                "subject_type": subject_type,
+                "subject_id": subject_id,
+                "permission": permission,
+            },
+        )
 
     def get_job(self, job_id: str):
         return self._http.get(f"/jobs/{job_id}")
