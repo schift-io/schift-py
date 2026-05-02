@@ -161,3 +161,51 @@ class BucketsModule:
         if relation is not None:
             payload["relation"] = relation
         return self._http.delete_json(f"/buckets/{bucket_id}/edges", data=payload)
+
+    def context(
+        self,
+        bucket_id: str,
+        query: str,
+        *,
+        token_budget: int = 2000,
+        mode: str = "auto",
+        session_id: Optional[str] = None,
+        filters: Optional[dict] = None,
+        include_messages: int = 0,
+        top_k: int = 10,
+    ) -> dict:
+        """Single-call RAG context — returns paste-ready context with citations.
+
+        Args:
+            bucket_id:       Bucket ID to search.
+            query:           User query.
+            token_budget:    Max tokens in returned context block (default 2000).
+            mode:            Pipeline mode: auto | naive | hyde | rerank | decision-review.
+            session_id:      Optional session ID for prepending recent turns.
+            filters:         Metadata filter dict passed to search.
+            include_messages: N most recent session turns to prepend.
+            top_k:           Number of chunks to retrieve before budget packing.
+
+        Returns:
+            dict with keys:
+                text           — paste-ready context string with [1] [2] citations
+                tokens         — estimated token count of text
+                chunks         — list of dicts with id/text/score/metadata
+                session_turns  — list of dicts with role/content
+                truncated_count — chunks truncated to fit budget
+                skipped_count   — chunks skipped due to budget
+                mode_used       — mode actually executed
+                cache_hit       — True if served from semantic cache
+        """
+        payload: dict = {
+            "query": query,
+            "token_budget": token_budget,
+            "mode": mode,
+            "include_messages": include_messages,
+            "top_k": top_k,
+        }
+        if session_id is not None:
+            payload["session_id"] = session_id
+        if filters is not None:
+            payload["filters"] = filters
+        return self._http.post(f"/buckets/{bucket_id}/context", data=payload)
