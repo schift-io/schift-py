@@ -2,9 +2,60 @@ from __future__ import annotations
 
 import json
 import time
-from typing import Any, Mapping, Optional, Union
+from typing import Any, Mapping, Optional, TypedDict, Union
 
 from schift._http import HttpClient
+
+
+class FilterOperator(TypedDict, total=False):
+    """Operator-shaped value for a metadata filter field.
+
+    Exactly one operator must be set. Available operators::
+
+        eq      — exact match (lowered to engine fast path)
+        ne      — not-equal
+        like    — SQL LIKE pattern (% = any, _ = single, \\% / \\_ = literal)
+        prefix  — starts-with (case-insensitive)
+        in      — membership in list (max 100 entries)
+        gt/gte  — greater-than (numeric or ISO date string)
+        lt/lte  — less-than
+        exists  — field presence (True = require, False = require missing)
+
+    Wire format keys are lowercase (``"in"``, ``"gt"``, ...). Plain scalar
+    values in a filter dict are treated as exact match for backward
+    compatibility.
+
+    Example::
+
+        client.buckets.search(
+            bucket_id, query="...",
+            filter={
+                "tag": "urgent",
+                "source_url": {"like": "%legal%"},
+                "score": {"gte": 0.8},
+                "stage": {"ne": "draft"},
+                "author": {"exists": True},
+            },
+        )
+    """
+
+    eq: Union[str, int, float, bool]
+    ne: Union[str, int, float, bool]
+    like: str
+    prefix: str
+    gt: Union[str, int, float]
+    gte: Union[str, int, float]
+    lt: Union[str, int, float]
+    lte: Union[str, int, float]
+    exists: bool
+
+
+FilterValue = Union[str, int, float, bool, FilterOperator, dict]
+"""Value type accepted in a search ``filter`` dict.
+
+Plain scalars become exact-match. Dicts are operator instances
+(``{"like": ...}``, ``{"prefix": ...}``, ``{"in": [...]}``, ``{"eq": ...}``).
+"""
 
 
 class BucketsModule:
@@ -31,9 +82,15 @@ class BucketsModule:
         mode: str = "hybrid",
         rerank: bool = False,
         model: Optional[str] = None,
-        filter: Optional[dict[str, Any]] = None,
+        filter: Optional[dict[str, FilterValue]] = None,
+        min_score: Optional[float] = None,
+        expand_neighbors: Optional[dict] = None,
     ):
-        payload = {"query": query, "top_k": top_k, "mode": mode, "rerank": rerank}
+        payload: dict[str, Any] = {"query": query, "top_k": top_k, "mode": mode, "rerank": rerank}
+        if min_score is not None:
+            payload["min_score"] = min_score
+        if expand_neighbors is not None:
+            payload["expand_neighbors"] = expand_neighbors
         if model is not None:
             payload["model"] = model
         if filter is not None:
@@ -45,6 +102,23 @@ class BucketsModule:
         if query is not None:
             params["query"] = query
         return self._http.get(f"/buckets/{bucket_id}/graph", params=params)
+
+    def facets(
+        self,
+        bucket_id: str,
+        fields: list[str],
+        limit_per_field: int = 20,
+    ):
+        """Aggregate metadata field values across the bucket.
+
+        Returns ``{"facets": {field: [{value, count}, ...]}, "totals": {...}}``
+        — useful for building filter UIs that need to know what values exist
+        for a given metadata key.
+        """
+        return self._http.post(
+            f"/buckets/{bucket_id}/facets",
+            data={"fields": fields, "limit_per_field": limit_per_field},
+        )
 
     def upload(
         self,
