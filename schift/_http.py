@@ -7,6 +7,7 @@ from typing import Any, Optional
 import httpx
 
 from schift.client import AuthError, EntitlementError, QuotaError, SchiftError
+from schift.tracker import active_tracker
 
 _DEFAULT_BASE_URL = "https://api.schift.io/v1"
 _USER_AGENT = "schift-python/0.1.0"
@@ -96,7 +97,18 @@ class HttpClient:
             raise SchiftError(f"API error {resp.status_code}: {resp.text}")
         if resp.status_code == 204:
             return None
-        return resp.json()
+        body = resp.json()
+        # Phase A token tracker hook: if a TokenTracker is active in this
+        # context, fold the response's ``usage`` field into it. No-op when
+        # no tracker is active.
+        tracker = active_tracker()
+        if tracker is not None:
+            try:
+                tracker.record_response(body)
+            except Exception:
+                # Tracker must never break the actual API call.
+                pass
+        return body
 
     def close(self):
         self._client.close()
