@@ -85,12 +85,21 @@ class BucketsModule:
         filter: Optional[dict[str, FilterValue]] = None,
         min_score: Optional[float] = None,
         expand_neighbors: Optional[dict] = None,
+        include_fields: Optional[list[str]] = None,
+        exclude_fields: Optional[list[str]] = None,
+        citation_format: Optional[str] = None,
     ):
         payload: dict[str, Any] = {"query": query, "top_k": top_k, "mode": mode, "rerank": rerank}
         if min_score is not None:
             payload["min_score"] = min_score
         if expand_neighbors is not None:
             payload["expand_neighbors"] = expand_neighbors
+        if include_fields is not None:
+            payload["include_fields"] = include_fields
+        if exclude_fields is not None:
+            payload["exclude_fields"] = exclude_fields
+        if citation_format is not None:
+            payload["citation_format"] = citation_format
         if model is not None:
             payload["model"] = model
         if filter is not None:
